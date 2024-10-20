@@ -1,10 +1,10 @@
-   name: python-app
+   name: mfs
 
    on:
      push:
-       branches: [ master ]
+       branches: [ main ]
      pull_request:
-       branches: [ master ]
+       branches: [ main ]
 
    jobs:
     build:
@@ -13,4 +13,4 @@
       - name: checkout repo
         uses: actions/checkout@main
       - name: build application
-        run: make build
+        run: make 
