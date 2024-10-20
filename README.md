@@ -16,8 +16,9 @@ Your program shall be named mfs.c and shall be implemented in C or C++.  You sha
 2. After each command completes, your program shall print the mfs> prompt and accept another line of input.
 3. Your program will exit with status zero if the command is “quit” or “exit”.
 4. If the user types a blank line, your program will, quietly and with no other output, print another prompt and accept a new line of input.
+5. Your application shall be case insensitive.
 
-5. The following commands shall be supported:
+6. The following commands shall be supported:
    
 #### open
 ```
@@ -124,6 +125,9 @@ The assignment will be graded out of 100 points. Compiler warnings are there to 
 Your code will be compiled with the provided makefile .  Your code must compile, cleanly, with:
 
 ```make```
+
+## Hints
+In the [Examples](Examples) directory there is a file, [compare.c](Examples/compare.c), that shows how to compare a file name "foo.c" with the "FOO     C  " in the FAT32 directory.
 
 ## Administrative
 
