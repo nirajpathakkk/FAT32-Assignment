@@ -1,3 +1,5 @@
+# FAT32 Assignment
+
 ## Description
 
 This assignment will familiarize you with the FAT32 file system.  You will become familiar with file allocation tables, endieness, as well as file access.  You will implement a user space shell application that is capable of interpreting a FAT32 file system image. The utility must not corrupt the file system image and should be robust.  No existing kernel code or any other FAT 32 utility code  may be used in your program.
@@ -62,6 +64,9 @@ BPB_SecPerClus
 BPB_RsvdSecCnt
 BPB_NumFATS
 BPB_FATSz32
+BPB_ExtFlags
+BPB_RootClus
+BPB_FSInfo
 ```
 
 #### stat
@@ -76,17 +81,17 @@ get <filename>
 ```
 This command shall retrieve the file from the FAT 32 image and place it in your current working directory.   If the file or directory does not exist then your program shall output “Error: File not found”.
 
-#### put
-```
-put <filename> 
-```
-This command shall read a file form the current working directory and place it in the memory resident FAT 32 image.   If the file or directory does not exist then your program shall output “Error: File not found”.
-
 #### get
 ```
 get <filename> <new filename>
 ```
 This command shall retrieve the file from the FAT 32 image and place it in your current working directory with the new filename.   If the file or directory does not exist then your program shall output “Error: File not found”.
+
+#### put
+```
+put <filename> 
+```
+This command shall read a file form the current working directory and place it in the memory resident FAT 32 image.   If the file or directory does not exist then your program shall output “Error: File not found”.
 
 #### cd
 ```
@@ -102,9 +107,22 @@ Lists the directory contents.  Your program shall support listing “.” and �
 
 #### read
 ```
-read <filename> <position> <number of bytes>
+read <filename> <position> <number of bytes> <OPTION>
 ```
-Reads from the given file at the position, in bytes, specified by the position parameter and output the number of bytes specified. The values shall be printed as hexadecimal integers in the form 0xXX.
+Reads from the given file at the position, in bytes, specified by the position parameter and output the number of bytes specified. The values shall be printed as hexadecimal integers in the form 0xXX by default.
+
+OPTION FLAGS
+The following are flags that can change the format of the output.  The user is not required to enter one.
+```
+-ascii
+```
+Print the bytes as ASCII characters
+
+```
+-dec
+```
+Print the bytes as decimal integers
+
 
 #### del
 ```
