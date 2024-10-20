@@ -41,6 +41,12 @@ save
 ```
 This command shall write the memory resident fat32 image to the current working directory.  It will use the filename of the existing open image. If the file system is not currently open your program shall output: “Error: File system not open.”  
 
+```
+save <new filename>
+```
+This command shall write the memory resident fat32 image to the current working directory.  It will use the new filename of the existing open image. If the file system is not currently open your program shall output: “Error: File system not open.”  The orignal disk image shall not be modified.
+
+
 #### quit
 ```
 quit   
@@ -81,7 +87,6 @@ get <filename>
 ```
 This command shall retrieve the file from the FAT 32 image and place it in your current working directory.   If the file or directory does not exist then your program shall output “Error: File not found”.
 
-#### get
 ```
 get <filename> <new filename>
 ```
@@ -91,7 +96,12 @@ This command shall retrieve the file from the FAT 32 image and place it in your 
 ```
 put <filename> 
 ```
-This command shall read a file form the current working directory and place it in the memory resident FAT 32 image.   If the file or directory does not exist then your program shall output “Error: File not found”.
+This command shall read a file from the current working directory and place it in the memory resident FAT 32 image. If the file or directory does not exist then your program shall output “Error: File not found”.
+
+```
+put <filename> <new filename>
+```
+This command shall read a file from the current working directory and place it in the memory resident FAT 32 image using the new filename for the file. If the file or directory does not exist then your program shall output “Error: File not found”.
 
 #### cd
 ```
