@@ -252,6 +252,7 @@ int main() {
              free(token[i]);
             }
             free(currentString);
+            
             break;
         }else if (strcmp(token[0], "info") == 0){
             if(fp!= NULL){
