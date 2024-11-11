@@ -32,13 +32,11 @@ struct FAT32_BPB
     int32_t FirstSectorOfCluster;  // Calculated, not part of the actual BPB
 };
 
-int32_t CurrDir; //current directory
+int32_t currentDir;
 char formattedDir[12]; // string to ocntain fully changed or formatted string
 FILE *fp= NULL;
 int currentAddr =-1;
 int flag =0;
-int i, j;
-int currentcluster =0;
 
 
 struct __attribute__((__packed__)) DirectoryEntry
@@ -124,80 +122,99 @@ int main()
 
 void openImg()
 {
-    if(strcmp(token[0],"open") == 0)
+    if (fp != NULL)
     {
-      if (fp != NULL)
-      {
-        printf("Error: A File system is image already open.\n");
-        continue;
-      }
-      fp = fopen(token[1], "r+");
-      if(fp == NULL)
-      {
-        printf("Error: File system image not found. \n");
-      }
-      else
-      {
-        set_values();
-        currentAddr = LBAToOffset(2);
-      }  
-    }        
+      printf("Error: File system image already open.\n");
+      continue;
+    }
+
+    fp = fopen(token[1], "r+");
+    
+    if(fp == NULL)
+    {
+      printf("Error: File system image not found. \n");
+    }
+    
+    else
+    {
+      set_values();
+      currentAddr = LBAToOffset(2);
+    }  
+            
 }
 
 void closeImg()
 {
-    if(strcmp(token[0],"close") == 0)
+    if(fp == NULL)
     {
-        if(fp == NULL)
-        {
-            printf("Error: File System Image must be opened First.\n");
-            continue;
-        }
-        fclose(fp);
-        fp = NULL; 
+        printf("Error: File system not open.\n");
+        continue;
     }
+
+    fclose(fp);
+    fp = NULL; 
 }
 
 void infoImg()
 {
-    if(strcmp(token[0],"info") == 0)
+    if(fp == NULL)
     {
-        if(fp == NULL)
-        {
-            printf("Error: File System Image must be opened First.\n");
-            continue;
-        }
-      printf("BPB_BytsPerSec(dec) : %d \nBPB_BytsPerSec(hex) : %x\n\n",BPB_BytsPerSec,BPB_BytsPerSec);
-      printf("BPB_SecPerClus(dec) : %d \nBPB_SecPerClus(hex) : %x\n\n",BPB_SecPerClus,BPB_SecPerClus);
-      printf("BPB_RsvdSecCnt(dec) : %d \nBPB_RsvdSecCnt(hex) : %x\n\n",BPB_RsvdSecCnt,BPB_RsvdSecCnt);
-      printf("BPB_NumFATs(dec) : %d \nBPB_NumFATs(hex) : %x\n\n",BPB_NumFATs,BPB_NumFATs);
-      printf("BPB_FATSz32(dec) : %d \nBPB_FATSz32(hex) : %x\n\n",BPB_FATSz32,BPB_FATSz32);
+        printf("Error: File not found\n");
+        continue;
     }
+    
+    printf("BPB_BytsPerSec(dec) : %d \nBPB_BytsPerSec(hex) : %x\n\n",BPB_BytsPerSec,BPB_BytsPerSec);
+    printf("BPB_SecPerClus(dec) : %d \nBPB_SecPerClus(hex) : %x\n\n",BPB_SecPerClus,BPB_SecPerClus);
+    printf("BPB_RsvdSecCnt(dec) : %d \nBPB_RsvdSecCnt(hex) : %x\n\n",BPB_RsvdSecCnt,BPB_RsvdSecCnt);
+    printf("BPB_NumFATs(dec) : %d \nBPB_NumFATs(hex) : %x\n\n",BPB_NumFATs,BPB_NumFATs);
+    printf("BPB_FATSz32(dec) : %d \nBPB_FATSz32(hex) : %x\n\n",BPB_FATSz32,BPB_FATSz32);
 }
 
-void lsImg()
+void listImg()
 {
-    if (strcmp(token[0], "ls") == 0)
+    if(fp == NULL)
     {
-      if(fp == NULL)
-      {
+        printf("Error: No image is opened.\n");
+        continue;
+    }
+
+    int offset = LBAToOffset(currentDir);
+    fseek(fp, offset, SEEK_SET);
+    
+    for(int i =0; i<16; i++)
+    {
+        fread(&dirEnt[i], 32, 1, fp);
+
+        if ((dirEnt[i].DIR_Name[0] != (char)0xe5) && (dirEnt[i].DIR_Attr == 0x1 || dirEnt[i].DIR_Attr == 0x10 || dirEnt[i].DIR_Attr == 0x20))
+        {
+            char *directory = malloc(11);
+            memset(directory, '\0', 11);
+            memcpy(directory, dirEnt[i].DIR_Name, 11);
+            printf("%s\n", directory);
+        }
+        // if(dirEnt[i].DIR_Attr == 0x01 || dirEnt[i].DIR_Attr == 0x10 || dirEnt[i].DIR_Attr == 0x20)
+        // { 
+        //   if(!(dirEnt[i].DIR_Name[0] == (char)0xE5 || dirEnt[i].DIR_Name[0] == (char)0x00 || dirEnt[i].DIR_Name[0] == (char)0x05)) 
+        //   {
+        //     for(int j=0; j<11; j++)
+        //       printf("%c",dirEnt[i].DIR_Name[j]);
+        //     printf("\n");
+        //   }
+        // }  
+    }
+}        
+
+
+void changeDir()
+{
+    if(fptr == NULL)
+    {
         printf("Error: File System Image must be opened First.\n");
         continue;
-      }
-      fseek(fp,currentAddr,SEEK_SET);
-      fread(&dirEnt,16,32,fp);
-      for(int i =0; i<16; i++)
-      {
-        if(dirEnt[i].DIR_Attr == 0x01 || dirEnt[i].DIR_Attr == 0x10 || dirEnt[i].DIR_Attr == 0x20)
-        { 
-          if(!(dirEnt[i].DIR_Name[0] == (char)0xE5 || dirEnt[i].DIR_Name[0] == (char)0x00 || dirEnt[i].DIR_Name[0] == (char)0x05)) 
-          {
-            for(int j=0; j<11; j++)
-              printf("%c",dirEnt[i].DIR_Name[j]);
-            printf("\n");
-          }
-        }  
-      }
-    }        
     }
+
+    int flag;
+
+
+
 }
