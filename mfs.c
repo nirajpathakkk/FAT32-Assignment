@@ -425,6 +425,90 @@ void filesread(FILE* fp, char * token[MAX_NUM_ARGUMENTS]){
 
 }
 
+void fileget(FILE* fp, char * token[MAX_NUM_ARGUMENTS]){
+    flag =0;
+    char filename[12];
+    memset( filename, ' ', 12 );
+
+    if(token[1] != NULL){
+        char *tok = strtok(token[1], ".");
+        if (tok != NULL) {
+            strncpy(filename, tok, strlen(tok) < 8 ? strlen(tok) : 8); // Protect against buffer overflow
+            tok = strtok(NULL, ".");
+
+            if (tok != NULL) {
+                strncpy(filename + 8, tok, strlen(tok) < 3 ? strlen(tok) : 3); // Protect against buffer overflow
+            }
+        }
+
+        filename[11] = '\0';  // Ensure null-termination
+
+        // Convert to uppercase
+        for (int i = 0; i < 11; i++) {
+            filename[i] = toupper((unsigned char)filename[i]);
+        }
+
+    }
+
+    int cluster = curr_cluster;
+    
+
+    while(cluster != -1){
+        uint32_t curr_offset = LBAToOffset(cluster);
+        fseek(fp,curr_offset,SEEK_SET);
+        fread(&dirEnt,(sizeof(struct DirectoryEntry))*16,1,fp);  
+        for(int i=0; i<16; i++)
+        {
+            if( strncmp( filename, dirEnt[i].DIR_Name, 11 ) == 0 )
+            {
+                flag=1;
+                FILE * file;
+                char buffer[512] ={};
+
+                if(token[2] == NULL){
+                    if ((file = fopen(token[1], "r+")== NULL){
+                        printf("FIle failed to open.\n");
+                        break;
+                    }
+                }else{
+                     if ((file = fopen(token[2], "r+")== NULL){
+                        printf("FIle failed to open.\n");
+                        break;
+                    }
+                }
+
+                int filecluster = dirEnt[i].DIR_FirstClusterLow;
+                int filesize = dirEnt[i].DIR_FileSize;
+                int bytetoread = filesize;
+                
+                while(filecluster != -1){
+                    if(bytetoread > 512){
+                        bytetoread = 512;
+                    }else{
+                        bytetoread = filesize;
+                    }
+                    
+                    uint32_t offset =  dirEnt[i].DIR_FirstClusterHigh << 16 | LBAToOffset(filecluster);
+                    fseek(fp,offset,SEEK_SET);
+                    fread(&buffer, 1, bytetoread, fp);
+                    fwrite(&buffer, 1, bytetoread, file);
+                    filesize = filesize - 512;
+                    filecluster = NextLB(filecluster, fp);
+                    if(filesize <= 0){
+                        break;
+                    }
+                }
+            }
+        }
+        cluster = NextLB(cluster, fp);
+    }
+    
+
+    if(flag == 0)
+    printf("Error: File not found.\n");
+
+}
+
 int main() {
     char *cmdLine = (char*) calloc(1, MAX_COMMAND_SIZE); // Use calloc to initialize to zero
     if (cmdLine == NULL) {
@@ -571,6 +655,17 @@ int main() {
                         filesread(fp, token);
                 }else{
                     printf("Usage: read <filename> <position> <number of bytes> <option>.\n");
+                }
+            } 
+        }else if (strcmp(token[0], "get") == 0){
+           if(fp == NULL)
+            {
+                printf("Error: No image is opened.\n");
+            }else{
+                if(token[1] != NULL){
+                        fileget(fp, token);
+                }else{
+                    printf("Usage: get <filename> <filename>\n");
                 }
             } 
         }
