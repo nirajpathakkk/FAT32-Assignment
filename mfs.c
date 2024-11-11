@@ -576,7 +576,7 @@ int main()
             {
                 if (tokenCount < 2)
                 {
-                    printf("Usuage: stat <filename> \n");
+                    printf("Usage: stat <filename> \n");
                 }
                 else
                 {
