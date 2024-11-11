@@ -104,31 +104,60 @@ void infoImg()
 
 }
 
-// void changeDir()
-// {
-    
+void changeDir(FILE * fp, char * token[MAX_NUM_ARGUMENTS])
+{
+    flag = 0;
+    if((strcmp(token[1], ".")) == 0){
+    }else{
+        char filename[12];
+        memset(filename, ' ', 12 );
+        if(strncmp(token[1], "..", 2) == 0){
+            strncpy(filename, token[1], 2);
+        }else{
+            char *tok = strtok(token[1], ".");
+            if (tok != NULL) {
+                strncpy(filename, tok, strlen(tok) < 8 ? strlen(tok) : 8); // Protect against buffer overflow
+                tok = strtok(NULL, ".");
 
-//     int flag;
-//     if (strcmp(token[1], "..") == 0)
-//     {
-//         int i;
-//         for (i = 0; i < 16; i++)
-//         {
-//             if (strncmp(dirEnt[i].DIR_Name, "..", 2) == 0)
-//             {
-//                 int offset = LBAToOffset(dirEnt[i].DIR_FirstClusterLow);
-//                 currentDirectory = dirEnt[i].DIR_FirstClusterLow;
-//                 fseek(fp, offset, SEEK_SET);
-//                 fread(&dirEnt[0], 32, 16, fp);
-//                 return;
-//             }
-//         }
-//     }
-//     int offset = LBAToOffset(cluster);
-//     currentDirectory = cluster;
-//     fseek(fp, offset, SEEK_SET);
-//     fread(&dirEnt[0], 32, 16, fp);
-// }
+                if (tok != NULL) {
+                    strncpy(filename + 8, tok, strlen(tok) < 3 ? strlen(tok) : 3); // Protect against buffer overflow
+                }
+            }
+        }
+        
+
+        filename[11] = '\0';  // Ensure null-termination
+
+        // Convert to uppercase
+        for (int i = 0; i < 11; i++) {
+            filename[i] = toupper((unsigned char)filename[i]);
+        }
+
+        int cluster = curr_cluster;
+        while(cluster != -1){
+            uint32_t curr_offset = LBAToOffset(cluster);
+            fseek(fp,curr_offset,SEEK_SET);
+            fread(&dirEnt[0],(sizeof(struct DirectoryEntry))*16,1,fp);  
+            for(int i=0; i<16; i++)
+            {
+                if( strncmp( filename, dirEnt[i].DIR_Name, 11 ) == 0 )
+                {
+                    if (dirEnt[i].DIR_Attr == 0x10 ){
+                        curr_cluster = dirEnt[i].DIR_FirstClusterLow;
+                        if (curr_cluster == 0){
+                            curr_cluster = 2;
+                        }
+                        flag = 1;
+                        break;
+                    }
+                }
+            }
+            cluster = NextLB(cluster, fp);
+        }
+    }
+    
+      
+}
 
 void statImg(FILE * fp, char * token[MAX_NUM_ARGUMENTS])
 {
@@ -179,10 +208,33 @@ void statImg(FILE * fp, char * token[MAX_NUM_ARGUMENTS])
         }
         cluster = NextLB(cluster, fp);
     }
-    
 
     if(flag == 0)
     printf("Error: File not found.\n");    
+}
+
+void listDir(FILE * fp)
+{
+    
+    int cluster = curr_cluster;
+    while(cluster != -1){
+        int offset = LBAToOffset(cluster);
+        fseek(fp, offset, SEEK_SET);
+        fread(&dirEnt[0], sizeof(struct DirectoryEntry)*16, 1, fp);
+        for(int i =0; i<16; i++)
+        {
+            if ((dirEnt[i].DIR_Name[0] != (char)0xe5) && (dirEnt[i].DIR_Attr == 0x1 || dirEnt[i].DIR_Attr == 0x10 || dirEnt[i].DIR_Attr == 0x20))
+            {
+                char directory[12];
+                strncpy(directory, dirEnt[i].DIR_Name, 11);
+                directory[11] = '\0';
+                printf("%s \n", directory);
+            }
+        }
+        cluster = NextLB(cluster, fp);
+
+    }
+    
 }
 
 int main() {
@@ -282,7 +334,25 @@ int main() {
                 }
             }
             
-        }
+        }else if (strcmp(token[0], "ls") == 0){
+            if(fp == NULL)
+            {
+                printf("Error: No image is opened.\n");
+            }else{
+                listDir(fp);
+            }
+        }else if (strcmp(token[0], "cd") == 0){
+            if(fp == NULL)
+            {
+                printf("Error: No image is opened.\n");
+            }else{
+                if(token[1] != NULL){
+                        changeDir(fp, token);
+                    }else{
+                        printf("Usuage: cd <file/folder>.\n");
+                    }
+                }  
+            }
 
         // Free each token and the currentString
         for (int i = 0; i < tokenCount; i++) {
@@ -295,42 +365,9 @@ int main() {
     if (fp != NULL) {
         fclose(fp);
     }
+
     return 0;
 }
 
-
-// void listDir()
-// {
-//     if(fp == NULL)
-//     {
-//         printf("Error: No image is opened.\n");
-//         continue;
-//     }
-
-//     int offset = LBAToOffset(currentDir);
-//     fseek(fp, offset, SEEK_SET);
-    
-//     for(int i =0; i<16; i++)
-//     {
-//         fread(&dirEnt[i], 32, 1, fp);
-
-//         if ((dirEnt[i].DIR_Name[0] != (char)0xe5) && (dirEnt[i].DIR_Attr == 0x1 || dirEnt[i].DIR_Attr == 0x10 || dirEnt[i].DIR_Attr == 0x20))
-//         {
-//             char *directory = malloc(11);
-//             memset(directory, '\0', 11);
-//             memcpy(directory, dirEnt[i].DIR_Name, 11);
-//             printf("%s\n", directory);
-//         }
-// }        
-
-
-
-
-
-
-// void exec()
-// {
-
-// }
 
 
