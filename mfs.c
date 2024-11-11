@@ -27,7 +27,7 @@
 
 // int32_t currentDir;
 // char formattedDir[12]; // string to obtain fully changed or formatted string
-int currentAddr =-1;
+int curr_cluster =-1;
 int flag =0;
 
 char *token[MAX_NUM_ARGUMENTS]; //Parsed input string separated by white space
@@ -157,22 +157,29 @@ void statImg(FILE * fp, char * token[MAX_NUM_ARGUMENTS])
 
     }
 
-    fseek(fp,currentAddr,SEEK_SET);
-    fread(&dirEnt,(sizeof(struct DirectoryEntry))*16,1,fp);
-      
-    for(int i=0; i<16; i++)
-    {
-        if( strncmp( filename, dirEnt[i].DIR_Name, 11 ) == 0 )
+    int cluster = curr_cluster;
+    
+
+    while(cluster != -1){
+        uint32_t curr_offset = LBAToOffset(cluster);
+        fseek(fp,curr_offset,SEEK_SET);
+        fread(&dirEnt,(sizeof(struct DirectoryEntry))*16,1,fp);  
+        for(int i=0; i<16; i++)
         {
-          flag=1;
-          printf("Attributes: Ox%x\n",dirEnt[i].DIR_Attr);
-          printf("Starting Cluster No: 0x%x\n",dirEnt[i].DIR_FirstClusterLow);
-          if(dirEnt[i].DIR_Attr == 0x10)
-            printf("Size: 0\n");
-          else 
-            printf("Size: %d\n",dirEnt[i].DIR_FileSize);
+            if( strncmp( filename, dirEnt[i].DIR_Name, 11 ) == 0 )
+            {
+            flag=1;
+            printf("Attributes: Ox%x\n",dirEnt[i].DIR_Attr);
+            printf("Starting Cluster No: 0x%x\n",dirEnt[i].DIR_FirstClusterLow);
+            if(dirEnt[i].DIR_Attr == 0x10)
+                printf("Size: 0\n");
+            else 
+                printf("Size: %d\n",dirEnt[i].DIR_FileSize);
+            }
         }
+        cluster = NextLB(cluster, fp);
     }
+    
 
     if(flag == 0)
     printf("Error: File not found.\n");    
@@ -233,7 +240,7 @@ int main() {
                 fp = fopen(token[1], "r+");
                 if (fp != NULL) {
                     set_values(fp);
-                    currentAddr = LBAToOffset(BPB_RootClus);
+                    curr_cluster = BPB_RootClus;
                     printf("File opened successfully.\n");
                 } else {
                     printf("Failed to open file: %s\n", token[1]);
@@ -252,7 +259,7 @@ int main() {
              free(token[i]);
             }
             free(currentString);
-            
+
             break;
         }else if (strcmp(token[0], "info") == 0){
             if(fp!= NULL){
